@@ -38,6 +38,8 @@ Chrome Extension Setup:
   
 TO RUN:
 
-  Simply run node app.js in the terminal within the node-webapp directory.
+  Navigate to the node-mysql directory, and run npm init, to get node-modeules
+  
+  Then, simply run node app.js in the terminal within the node-mysql directory.
   
   Skip within youtube videos, making sure they are being stored in your mysql databse.
