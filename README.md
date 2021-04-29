@@ -6,7 +6,7 @@ Chrome Extension, for tracking where users skip within youtube videos.
 SETUP:
 
 Database Setup:
-  - Create the database table with the included 'users.sql' file within node-webapp:
+  - Create the database table with the included 'users.sql' file within node-mysql:
   
   ```
   CREATE TABLE IF NOT EXISTS `skips` (
