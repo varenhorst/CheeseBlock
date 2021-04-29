@@ -38,8 +38,8 @@ Chrome Extension Setup:
   
 TO RUN:
 
-  Navigate to the node-mysql directory, and run npm init, to get node-modeules
+  Navigate to the node-mysql directory, and run 'npm init', and 'npm install' to get node-modules
   
-  Then, simply run node app.js in the terminal within the node-mysql directory.
+  Then, simply run 'node app.js' in the terminal within the node-mysql directory.
   
   Skip within youtube videos, making sure they are being stored in your mysql databse.
