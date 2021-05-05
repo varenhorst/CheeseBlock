@@ -24,12 +24,11 @@ Goal:
 */
 
 
-(function() {
 
-	// var url = location.href;
+
+(function() {
 	var isVid = false;
 	var url = '';
-	// var video = $('video')[0];
 	var skipManifest = [];
 
 	chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
@@ -42,7 +41,7 @@ Goal:
 	  			}
 	  			if(skipManifest.length > 0) {
 	  				console.log(skipManifest);
-	  				sendPost(request.url, skipFinder(skipManifest,4));
+	  				sendPost(request.url, skipManifest);
 	  				skipManifest = [];
 	  			}
 	  		} else {
@@ -57,6 +56,7 @@ Goal:
 
 	function sendPost(prev_url,data){
 		console.log("sending post");
+		data = skipFinder(data,4);
 		chrome.runtime.sendMessage({message: "post-skips", skips: data, url: prev_url});
 	}
 
@@ -73,12 +73,13 @@ Goal:
 
 		if(typeof video != 'undefined'){
 			video.addEventListener('loadeddata', (event) => {
+				reset();
 				skipManifest = [];
 				url = location.href;
-				video.ontimeupdate = function(){videoTime()}; //this is called every time the video progresses.
-				if(typeof heatmap != 'undefined'){
-					reset();
-				}
+				video.ontimeupdate = function(){current = videoTime(video)}; //this is called every time the video progresses.
+				// if(typeof heatmap != 'undefined'){
+				// 	reset();
+				// }
 				chrome.runtime.sendMessage({message: "get-skips", url: url});
 
 				if(!chrome.storage.onChanged.hasListeners()){
@@ -98,7 +99,7 @@ Goal:
 					    			skip = {from: newskips.message[i]['init'], to: newskips.message[i]['final']}
 					    			var skips = a.push(skip);
 					    		}	
-								addheatMap(a);
+								addheatMap(a,video,heatmap);
 					    	}
 				    	}
 
@@ -108,9 +109,9 @@ Goal:
 
 				chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 				    if(request.message == 'hide-heatmap'){
-				    	hideShowHeatmap("hide");
+				    	hideShowHeatmap("hide",heatmap);
 				    } else if(request.message == 'show-heatmap'){
-				    	hideShowHeatmap("show");
+				    	hideShowHeatmap("show",heatmap);
 				    }
 				 });
 
@@ -159,29 +160,11 @@ Goal:
 			console.log("Error getting video. Is there a video on this page?");
 			return true;
 		}
+	}
+	
+	//############ Functions #############\\
 
 
-//############ Functions #############\\
-
-		//** Tracks time of the video **//
-		function videoTime(){
-			current = video.currentTime;
-		}
-
-		//** Gets interval of the video skip, and adds it to skipManifest **//
-		function getSkipInterval(url,before,after){
-			if(before >= 5)
-			{
-				var arr = {url:url,from: before, to: after};
-				skipManifest.push(arr);
-			}
-		}
-
-
-		function createArr(count, total){
-			var arr = {count:count,total:total};
-			return arr;
-		}
 
 /*		function addChapters(times){
 			for(var i = 0; i < times.length; i++){
@@ -202,204 +185,220 @@ Goal:
 			}
 		}*/
 
-		function addMovingChapter(time){
-			var left = convertTimeToPercentage(time); //4:20
-			var str = "<div class='chapter' style=left:" + left + "></div>";
-			var html = $.parseHTML(str);
-			$('.ytp-chrome-controls').append(html);
-			$(".chapter").draggable({ axis: 'x' });
-		}
 
-		function clearContent(){
 
-		}
+	// function addMovingChapter(time){
+	// 		var left = convertTimeToPercentage(time); //4:20
+	// 		var str = "<div class='chapter' style=left:" + left + "></div>";
+	// 		var html = $.parseHTML(str);
+	// 		$('.ytp-chrome-controls').append(html);
+	// 		$(".chapter").draggable({ axis: 'x' });
+	// 	}
+
+		// function clearContent(){
+
+		// }
 
 		//Converts a given time in seconds to a percentage of the video.
 		//returns a string of the percentage.
-		function convertTimeToPercentage(time){
-			var totalTime = video.duration; //total length of video
-			var ratio = time/totalTime * 100;
-			//console.log(video.duration / 60,"minutes");
-			ratio.toString();
-			ratio = ratio + "%";
+		// function convertTimeToPercentage(time,video){
+		// 	var totalTime = video.duration; //total length of video
+		// 	var ratio = time/totalTime * 100;
+		// 	//console.log(video.duration / 60,"minutes");
+		// 	ratio.toString();
+		// 	ratio = ratio + "%";
 
-			return ratio;
-		}
+		// 	return ratio;
+		// }
 
 		//Converts the given time to a percentage of the video.
 		//returns an int.
-		function convertTime(time){
-			var totalTime = video.duration; //total length of video
-			var ratio = time/totalTime * 100;
-			//console.log(video.duration / 60,"minutes");
+	function convertTime(time,video){
+		var totalTime = video.duration; //total length of video
+		var ratio = time/totalTime * 100;
+		//console.log(video.duration / 60,"minutes");
 
-			return ratio;
-		}
-
-		//resets the skipManifest for the new url.
-		function reset(){
-			console.log("reset");
-			//skipManifest = [];
-			parent = document.querySelector('#heatmap-container')
-			while (parent.firstChild) {
-	       		parent.removeChild(parent.firstChild);
-	    	}
-
-	    	var contentToRemove = document.querySelectorAll(".chapter");
-			$(contentToRemove).remove(); 
-		}
-
-
-		function hideShowHeatmap(option){
-			if(typeof heatmap == 'undefined'){return;}
-			if(option=='hide'){
-				$("#heatmap-container").hide("slow");
-			} else {
-				$("#heatmap-container").show("slow");
-			}
-		}
-
-
-		//get mid point of the 2 times, to get the radius for the heatmap.
-		//this is the midpoint given in seconds.dsafa
-		function getmidPoint(arr){
-			var sum = arr['from'] + arr['to'];
-			var mid = sum / 2;
-			return mid;
-		}
-
-		function roundToTwo(num) {    
-	    	return +(Math.round(num + "e+3")  + "e-3");
-		}
-
-		//gets, and returns the distance between skips [in seconds].
-		function getDistanceBetweenSkips(arr){
-			var max = arr['to'];
-			var min = arr['from'];
-
-			return max - min;
-		}
-
-		function getRadiusForHeatMap(arr){
-			console.log(getDistanceBetweenSkips(arr),'=> RADIUS');
-			return getDistanceBetweenSkips(arr)/2;
-		}
-
-
-		// create the heatmap for the skips.
-		//waits 3 seconds before creating the heatmap
-		//this way it does not influence the user to skip to where the heatmap lies, 
-		function addheatMap(arr){
-			setTimeout(function(){
-				heatmap = h337.create({
-		 		// only container is required, the rest will be defaults
-		  			container: document.querySelector('#heatmap-container')
-				});
-
-				var points = [];
-				var max = 0;
-				var width = $('.ytp-progress-bar').width();
-				var height = 10;
-
-
-				for(var i = 0; i <= arr.length; i++){
-					if(typeof arr[i]!='undefined'){
-						var point = {
-							// x: convertTime(260)/100 * $('.ytp-progress-bar').width(), // position on line
-							x: convertTime(getmidPoint(arr[i]))/100 * width,
-						    y: 1,
-						    value: 10,
-						    // radius configuration on point basis
-						    radius: convertTime(getRadiusForHeatMap(arr[i]))/100 * width
-					    	// radius:10
-						};
-						points.push(point);
-					}
-				}
-
-
-
-				var data = {
-				  max: 12,
-				  data: points
-				};
-				console.log(data, "=>Data for the heapmap")
-			// if you have a set of datapoints always use setData instead of addData
-			// for data initialization
-
-				heatmap.setData(data);
-			},3000)
-		}
-
-
-		//add heatContainer
-		function addHeatContainer(){
-			var str = "<div id='heatmap-container'></div>";
-			var html = $.parseHTML(str);
-			$('.ytp-progress-bar').append(html);
-
-			console.log($('#heatmap-container'));
-
-			//return $('#heatmap-container');
-		}
-
-
-
-
-		// function addCommentButton(){
-		// 	var str = "<div id='cheeseblock-plus'>+</div><div class='comment-container'></div>";
-		// 	var html = $.parseHTML(str);
-		// 	$('.ytp-left-controls').append(html);
-		// 	$('.time-input').hide();
-		// }
-
-
-		function expandCommentBox(opt){
-			if(opt == 'hide'){ 
-				$('.comment-container').hide("fast");
-			} else {
-				$('.comment-container').show("fast");
-			}
-		}
-
-
-	return true;
-
+		return ratio;
 	}
-			//Merges consecutive skips, and removes skips that are unreliable, ie: skipping back.
-		//seconds until merging a skip (5 seconds might be best)
-		function skipFinder(arr,threshold){
-			console.log("before", arr);
-			var url = arr[0]['url'];
-			for(var i = 0; i < arr.length; i++){
-				console.log(arr[i])
-			    if(typeof arr[i+1] === 'undefined'){
-	        		break;
-			    } else {
-			      if(Math.abs(arr[i]['to'] - arr[i+1]['from']) <= threshold){
-			        var x = arr[i];
-			        var y = arr[i+1];
-			        arr[i+1] = {url: url, from:x['from'], to: y['to']};
-			        arr.splice(i, 1);
-			        i--;
-			      }
-			    }
+
+	//resets the skipManifest for the new url.
+	function reset(){
+		console.log("reset");
+		//skipManifest = [];
+		parent = document.querySelector('#heatmap-container')
+		while (parent.firstChild) {
+       		parent.removeChild(parent.firstChild);
+    	}
+
+    	var contentToRemove = document.querySelectorAll(".chapter");
+		$(contentToRemove).remove(); 
+	}
+
+
+	function hideShowHeatmap(option,heatmap){
+		if(typeof heatmap == 'undefined'){return;}
+		if(option=='hide'){
+			$("#heatmap-container").hide("slow");
+		} else {
+			$("#heatmap-container").show("slow");
+		}
+	}
+
+
+	//get mid point of the 2 times, to get the radius for the heatmap.
+	//this is the midpoint given in seconds.dsafa
+	function getmidPoint(arr){
+		var sum = arr['from'] + arr['to'];
+		var mid = sum / 2;
+		return mid;
+	}
+
+	function roundToTwo(num) {    
+    	return +(Math.round(num + "e+3")  + "e-3");
+	}
+
+	//gets, and returns the distance between skips [in seconds].
+	function getDistanceBetweenSkips(arr){
+		var max = arr['to'];
+		var min = arr['from'];
+
+		return max - min;
+	}
+
+	function getRadiusForHeatMap(arr){
+		console.log(getDistanceBetweenSkips(arr),'=> RADIUS');
+		return getDistanceBetweenSkips(arr)/2;
+	}
+
+
+	// create the heatmap for the skips.
+	//waits 3 seconds before creating the heatmap
+	//this way it does not influence the user to skip to where the heatmap lies, 
+	function addheatMap(arr,video,heatmap){
+		setTimeout(function(){
+			heatmap = h337.create({
+	 		// only container is required, the rest will be defaults
+	  			container: document.querySelector('#heatmap-container')
+			});
+
+			var points = [];
+			var max = 0;
+			var width = $('.ytp-progress-bar').width();
+			var height = 10;
+
+
+			for(var i = 0; i <= arr.length; i++){
+				if(typeof arr[i]!='undefined'){
+					var point = {
+						// x: convertTime(260)/100 * $('.ytp-progress-bar').width(), // position on line
+						x: convertTime(getmidPoint(arr[i]),video)/100 * width,
+					    y: 1,
+					    value: 10,
+					    // radius configuration on point basis
+					    radius: convertTime(getRadiusForHeatMap(arr[i]),video)/100 * width
+				    	// radius:10
+					};
+					points.push(point);
+				}
 			}
-			console.log("after" , arr);
-			return removeUnwantedSkips(arr);
-		}
 
 
-		//removes skips that do not really make any sense, such as skipping back
-		//or something else kinda dumb.
-		function removeUnwantedSkips(arr){
-			for(var i = 0; i<arr.length; i++){
-			  	if(arr[i]['from'] - arr[i]['to'] > 0){
-			    	arr.splice(i, 1);
-			    	i--;
-			    }
-		  	}
-			return arr;
+
+			var data = {
+			  max: 12,
+			  data: points
+			};
+			console.log(data, "=>Data for the heapmap")
+		// if you have a set of datapoints always use setData instead of addData
+		// for data initialization
+
+			heatmap.setData(data);
+		},3000)
+	}
+
+
+	//add heatContainer
+	function addHeatContainer(){
+		var str = "<div id='heatmap-container'></div>";
+		var html = $.parseHTML(str);
+		$('.ytp-progress-bar').append(html);
+
+		console.log($('#heatmap-container'));
+
+		//return $('#heatmap-container');
+	}
+
+
+
+
+	// function addCommentButton(){
+	// 	var str = "<div id='cheeseblock-plus'>+</div><div class='comment-container'></div>";
+	// 	var html = $.parseHTML(str);
+	// 	$('.ytp-left-controls').append(html);
+	// 	$('.time-input').hide();
+	// }
+
+
+	function expandCommentBox(opt){
+		if(opt == 'hide'){ 
+			$('.comment-container').hide("fast");
+		} else {
+			$('.comment-container').show("fast");
 		}
+	}
+//** Gets interval of the video skip, and adds it to skipManifest **//
+	function getSkipInterval(url,before,after){
+		if(before >= 5)
+		{
+			var arr = {url:url,from: before, to: after};
+			skipManifest.push(arr);
+		}
+	}
+
+
+	function createArr(count, total){
+		var arr = {count:count,total:total};
+		return arr;
+	}
+
+	//** Tracks time of the video **//
+	function videoTime(video){
+		return video.currentTime;
+	}
+		//Merges consecutive skips, and removes skips that are unreliable, ie: skipping back.
+	//seconds until merging a skip (5 seconds might be best)
+	function skipFinder(arr,threshold){
+		console.log("before", arr);
+		var url = arr[0]['url'];
+		for(var i = 0; i < arr.length; i++){
+			console.log(arr[i])
+		    if(typeof arr[i+1] === 'undefined'){
+        		break;
+		    } else {
+		      if(Math.abs(arr[i]['to'] - arr[i+1]['from']) <= threshold){
+		        var x = arr[i];
+		        var y = arr[i+1];
+		        arr[i+1] = {url: url, from:x['from'], to: y['to']};
+		        arr.splice(i, 1);
+		        i--;
+		      }
+		    }
+		}
+		console.log("after" , arr);
+		return removeUnwantedSkips(arr);
+	}
+
+
+	//removes skips that do not really make any sense, such as skipping back
+	//or something else kinda dumb.
+	function removeUnwantedSkips(arr){
+		for(var i = 0; i<arr.length; i++){
+		  	if(arr[i]['from'] - arr[i]['to'] > 0){
+		    	arr.splice(i, 1);
+		    	i--;
+		    }
+	  	}
+		return arr;
+	}
 	// });
 })();
