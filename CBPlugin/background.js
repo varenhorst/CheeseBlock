@@ -1,12 +1,13 @@
 var count = 0;
 
 function getData(url){ 
-  var dir = 'http://localhost:8080/skip';
+  var dir = 'https://cheeseblock-313420.appspot.com/skip';
   var request = new XMLHttpRequest();
   var res;
   var params = "?url="+url;
   // console.log(params,"PARAMS");
   request.open("GET", dir+params, true);
+  // request.setRequestHeader('Access-Control-Allow-Origin', '*');
 
   request.onload = function()
   {
@@ -35,7 +36,7 @@ function getData(url){
 
 // var data;
 function postData(data){
-  var dir = 'http://localhost:8080/skip';
+  var dir = 'https://cheeseblock-313420.appspot.com/skip';
   var request = new XMLHttpRequest();
 
   var url = 'alexwashere';
@@ -46,6 +47,8 @@ function postData(data){
 
   request.open("POST", dir);
   request.setRequestHeader("Content-type", "application/json");
+  // request.setRequestHeader('Access-Control-Allow-Origin', '*');
+
   // request.setRequestHeader("Content-length", data.length);
   // request.setRequestHeader("Content-length", data.length);
   // request.setRequestHeader("Connection", "close");

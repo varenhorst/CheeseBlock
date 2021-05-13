@@ -73,13 +73,12 @@ Goal:
 
 		if(typeof video != 'undefined'){
 			video.addEventListener('loadeddata', (event) => {
-				reset();
 				skipManifest = [];
 				url = location.href;
 				video.ontimeupdate = function(){current = videoTime(video)}; //this is called every time the video progresses.
-				// if(typeof heatmap != 'undefined'){
-				// 	reset();
-				// }
+				if(typeof heatmap != 'undefined'){
+					reset();
+				}
 				chrome.runtime.sendMessage({message: "get-skips", url: url});
 
 				if(!chrome.storage.onChanged.hasListeners()){
@@ -99,7 +98,7 @@ Goal:
 					    			skip = {from: newskips.message[i]['init'], to: newskips.message[i]['final']}
 					    			var skips = a.push(skip);
 					    		}	
-								addheatMap(a,video,heatmap);
+								addheatMap(a,video);
 					    	}
 				    	}
 
@@ -109,9 +108,9 @@ Goal:
 
 				chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 				    if(request.message == 'hide-heatmap'){
-				    	hideShowHeatmap("hide",heatmap);
+				    	hideShowHeatmap("hide");
 				    } else if(request.message == 'show-heatmap'){
-				    	hideShowHeatmap("show",heatmap);
+				    	hideShowHeatmap("show");
 				    }
 				 });
 
@@ -195,24 +194,24 @@ Goal:
 	// 		$(".chapter").draggable({ axis: 'x' });
 	// 	}
 
-		// function clearContent(){
+	// function clearContent(){
 
-		// }
+	// }
 
-		//Converts a given time in seconds to a percentage of the video.
-		//returns a string of the percentage.
-		// function convertTimeToPercentage(time,video){
-		// 	var totalTime = video.duration; //total length of video
-		// 	var ratio = time/totalTime * 100;
-		// 	//console.log(video.duration / 60,"minutes");
-		// 	ratio.toString();
-		// 	ratio = ratio + "%";
+	//Converts a given time in seconds to a percentage of the video.
+	//returns a string of the percentage.
+	// function convertTimeToPercentage(time,video){
+	// 	var totalTime = video.duration; //total length of video
+	// 	var ratio = time/totalTime * 100;
+	// 	//console.log(video.duration / 60,"minutes");
+	// 	ratio.toString();
+	// 	ratio = ratio + "%";
 
-		// 	return ratio;
-		// }
+	// 	return ratio;
+	// }
 
-		//Converts the given time to a percentage of the video.
-		//returns an int.
+	//Converts the given time to a percentage of the video.
+	//returns an int.
 	function convertTime(time,video){
 		var totalTime = video.duration; //total length of video
 		var ratio = time/totalTime * 100;
@@ -235,7 +234,7 @@ Goal:
 	}
 
 
-	function hideShowHeatmap(option,heatmap){
+	function hideShowHeatmap(option){
 		if(typeof heatmap == 'undefined'){return;}
 		if(option=='hide'){
 			$("#heatmap-container").hide("slow");
@@ -274,7 +273,7 @@ Goal:
 	// create the heatmap for the skips.
 	//waits 3 seconds before creating the heatmap
 	//this way it does not influence the user to skip to where the heatmap lies, 
-	function addheatMap(arr,video,heatmap){
+	function addheatMap(arr,video){
 		setTimeout(function(){
 			heatmap = h337.create({
 	 		// only container is required, the rest will be defaults
